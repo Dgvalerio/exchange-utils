@@ -1,14 +1,18 @@
 import React, { FC, useEffect, useState } from 'react';
 
+import { RefreshOutlined } from '@mui/icons-material';
 import {
   Avatar,
+  Backdrop,
   Button,
   Card,
   CardActions,
   CardContent,
   CardHeader,
+  CircularProgress,
   Container,
   Grid,
+  IconButton,
   Typography,
 } from '@mui/material';
 import axios from 'axios';
@@ -82,21 +86,45 @@ const main = async (): Promise<IPR[]> => {
 };
 
 const App: FC = () => {
+  const [loading, setLoading] = useState(true);
   const [prs, setPrs] = useState<IPR[]>([]);
 
+  const loadPRs = async (): Promise<void> => {
+    setLoading(true);
+
+    const response = await main();
+
+    setPrs(response);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    main().then((response) => setPrs(response));
+    void loadPRs();
   }, []);
 
   return (
     <Container>
-      <Grid container>
-        <Grid xs={12} sx={{ padding: '2rem 1rem 1rem 1rem' }}>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
+      <Grid container alignItems="stretch" justifyContent="space-between">
+        <Grid xs={10} sx={{ padding: '2rem 1rem 1rem 1rem' }}>
           <Typography variant="h2">Pull Requests</Typography>
+        </Grid>
+        <Grid alignSelf="center">
+          <IconButton onClick={loadPRs}>
+            <RefreshOutlined sx={{ fontSize: 40 }} />
+          </IconButton>
         </Grid>
         {prs.map((pr) => (
           <Grid xs={4} sx={{ padding: 1 }}>
-            <Card key={pr.title}>
+            <Card
+              key={pr.title}
+              sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            >
               <CardHeader
                 avatar={<Avatar alt={pr.user.login} src={pr.user.avatar} />}
                 title={<Typography variant="subtitle1">{pr.title}</Typography>}
@@ -111,7 +139,7 @@ const App: FC = () => {
                   {pr.body}
                 </Typography>
               </CardContent>
-              <CardActions disableSpacing>
+              <CardActions disableSpacing sx={{ marginTop: 'auto' }}>
                 <Button href={pr.url} target="_blank">
                   Revisar Pull Request
                 </Button>
