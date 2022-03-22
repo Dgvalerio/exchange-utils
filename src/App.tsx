@@ -19,6 +19,16 @@ import axios from 'axios';
 
 import { IPullRequest } from './types/PullRequest.interface';
 
+interface IPrePR {
+  repo: string;
+  user: { login: string; avatar: string };
+  created_at: Date;
+  state: string;
+  title: string;
+  body: string;
+  url: string;
+}
+
 interface IPR {
   repo: string;
   user: { login: string; avatar: string };
@@ -68,21 +78,33 @@ const main = async (): Promise<IPR[]> => {
       repo,
       state: pr.state,
       user: { login: pr.user.login, avatar: pr.user.avatar_url },
-      created_at: new Date(pr.created_at).toLocaleDateString('pt-BR', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      }),
+      created_at: new Date(pr.created_at),
       title: pr.title,
       body: pr.body,
       url: pr.html_url,
     }));
   });
 
-  const prs: IPR[][] = await Promise.all(prsPromise);
+  const prs: IPrePR[][] = await Promise.all(prsPromise);
 
-  return prs.reduce((previousValue, current) => previousValue.concat(current));
+  const joinedPrs = prs.reduce((previousValue, current) =>
+    previousValue.concat(current)
+  );
+
+  const organizedByDate = joinedPrs.sort(
+    ({ created_at: previous }, { created_at: current }) =>
+      previous.getTime() - current.getTime()
+  );
+
+  return organizedByDate.map((pr) => ({
+    ...pr,
+    created_at: pr.created_at.toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }),
+  }));
 };
 
 const App: FC = () => {
