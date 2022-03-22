@@ -26,12 +26,11 @@ interface IPR {
 }
 
 const main = async (): Promise<IPR[]> => {
-  // INSIRA AQUI O SEU TOKEN DO GITHUB
-  const token = '';
-
   const api = axios.create({
     baseURL: 'https://api.github.com/',
-    headers: { Authorization: `token ${token}` },
+    headers: {
+      Authorization: `token ${process.env.REACT_APP_GITHUB_TOKEN}`,
+    },
   });
 
   const owner = 'lubysoftware';
