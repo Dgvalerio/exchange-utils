@@ -72,17 +72,17 @@ const main = async (): Promise<IPR[]> => {
       `/repos/${owner}/${repo}/pulls`
     );
 
-    console.log({ data });
-
-    return data.map((pr) => ({
-      repo,
-      state: pr.state,
-      user: { login: pr.user.login, avatar: pr.user.avatar_url },
-      created_at: new Date(pr.created_at),
-      title: pr.title,
-      body: pr.body,
-      url: pr.html_url,
-    }));
+    return data
+      .filter((pr) => pr.user.login !== 'dependabot[bot]')
+      .map((pr) => ({
+        repo,
+        state: pr.state,
+        user: { login: pr.user.login, avatar: pr.user.avatar_url },
+        created_at: new Date(pr.created_at),
+        title: pr.title,
+        body: pr.body,
+        url: pr.html_url,
+      }));
   });
 
   const prs: IPrePR[][] = await Promise.all(prsPromise);
