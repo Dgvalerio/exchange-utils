@@ -1,4 +1,5 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, ReactElement, useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 import { RefreshOutlined } from '@mui/icons-material';
 import {
@@ -9,10 +10,16 @@ import {
   CardActions,
   CardContent,
   CardHeader,
+  Checkbox,
   CircularProgress,
+  colors,
   Container,
+  darken,
+  FormControlLabel,
   Grid,
   IconButton,
+  List,
+  ListItem,
   Typography,
 } from '@mui/material';
 import axios from 'axios';
@@ -151,14 +158,54 @@ const OpenPullRequests: FC = () => {
                 title={<Typography variant="subtitle1">{pr.title}</Typography>}
                 subheader={pr.created_at}
               />
-              <CardContent>
-                <Typography
-                  variant="body1"
-                  color="text.secondary"
-                  sx={{ whiteSpace: 'break-spaces' }}
-                >
-                  {pr.body}
-                </Typography>
+              <CardContent
+                sx={{
+                  flex: 1,
+                  backgroundColor: darken(colors.grey['900'], 0.3),
+                }}
+              >
+                <ReactMarkdown
+                  children={pr.body}
+                  components={{
+                    h1: ({ children }): ReactElement => (
+                      <Typography variant="h4">{children}</Typography>
+                    ),
+                    h2: ({ children }): ReactElement => (
+                      <Typography variant="h5">{children}</Typography>
+                    ),
+                    h3: ({ children }): ReactElement => (
+                      <Typography variant="h6">{children}</Typography>
+                    ),
+                    p: ({ children }): ReactElement => (
+                      <Typography variant="body1">{children}</Typography>
+                    ),
+                    ul: ({ children }): ReactElement => <List>{children}</List>,
+                    li: ({ children }): ReactElement => {
+                      const text: string = `${children[0]}`;
+
+                      if (text[0] === '[')
+                        return (
+                          <ListItem>
+                            <FormControlLabel
+                              control={
+                                <Checkbox
+                                  checked={text[1] !== ' '}
+                                  disableRipple
+                                />
+                              }
+                              label={text.slice(3)}
+                            />
+                          </ListItem>
+                        );
+                      else return <ListItem>{text}</ListItem>;
+                    },
+                    a: ({ children, href }): ReactElement => (
+                      <Button href={href || '#'} target="_blank">
+                        {children}
+                      </Button>
+                    ),
+                  }}
+                />
               </CardContent>
               <CardActions disableSpacing sx={{ marginTop: 'auto' }}>
                 <Button href={pr.url} target="_blank">
