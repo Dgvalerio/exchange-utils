@@ -32,12 +32,27 @@ const repositories = [
   'Exchange.Websocket',
 ];
 
-export const getCommits = async (author: string): Promise<ICommitView[]> => {
+export interface GetCommits {
+  author: string;
+  since?: string;
+  until?: string;
+}
+
+export const getCommits = async ({
+  author,
+  until,
+  since,
+}: GetCommits): Promise<ICommitView[]> => {
   const commitsPromise = repositories.map(
     async (repo): Promise<ICommitView[]> => {
-      const { data } = await api.get<ICommit[]>(
-        `/repos/${owner}/${repo}/commits?author=${author}`
-      );
+      let url = `/repos/${owner}/${repo}/commits?author=${author}`;
+
+      if (since && since !== '') url += `&since=${since}`;
+      if (until && until !== '') url += `&until=${until}`;
+
+      console.log({ getCommits: url });
+
+      const { data } = await api.get<ICommit[]>(url);
 
       return data.map((commit) => ({
         repo,

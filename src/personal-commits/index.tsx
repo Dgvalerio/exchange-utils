@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { ChangeEventHandler, FC, useEffect, useState } from 'react';
 
 import { OpenInNew } from '@mui/icons-material';
 import {
@@ -23,7 +23,7 @@ import TextField from '@mui/material/TextField';
 
 import { ICollaboratorView } from '../types/Collaborator.interface';
 import { ICommitView } from '../types/Commit.interface';
-import { getCollaborators, getCommits } from '../utils/api';
+import { getCollaborators, GetCommits, getCommits } from '../utils/api';
 
 const PersonalCommits: FC = () => {
   const [loading, setLoading] = useState(false);
@@ -33,6 +33,20 @@ const PersonalCommits: FC = () => {
     login: '',
     avatar_url: '',
   });
+  const [startDate, setStartDate] = useState(
+    ((): string => {
+      const date = new Date();
+
+      return date.toISOString().split('T')[0];
+    })()
+  );
+  const [endDate, setEndDate] = useState(
+    ((): string => {
+      const date = new Date();
+
+      return date.toISOString().split('T')[0];
+    })()
+  );
 
   const loadCollaborators = async (): Promise<void> => {
     setLoading(true);
@@ -43,10 +57,18 @@ const PersonalCommits: FC = () => {
     setLoading(false);
   };
 
-  const loadCommits = async (user: string): Promise<void> => {
+  const loadCommits = async ({
+    author,
+    since,
+    until,
+  }: GetCommits): Promise<void> => {
     setLoading(true);
 
-    const response = await getCommits(user);
+    const response = await getCommits({
+      author,
+      since: since && new Date(since).toISOString(),
+      until: until && new Date(until).toISOString(),
+    });
 
     setCommits(response);
     setLoading(false);
@@ -60,7 +82,31 @@ const PersonalCommits: FC = () => {
     console.log({ anCollaborator, value });
 
     setUser(anCollaborator);
-    void loadCommits(value);
+    void loadCommits({ author: value, since: startDate, until: endDate });
+  };
+
+  const changeStartDate: ChangeEventHandler<HTMLInputElement> = (
+    event
+  ): void => {
+    setStartDate(event.target.value);
+
+    if (user.login && user.login !== '')
+      void loadCommits({
+        author: user.login,
+        since: event.target.value,
+        until: endDate,
+      });
+  };
+
+  const changeEndDate: ChangeEventHandler<HTMLInputElement> = (event): void => {
+    setEndDate(event.target.value);
+
+    if (user.login && user.login !== '')
+      void loadCommits({
+        author: user.login,
+        since: startDate,
+        until: event.target.value,
+      });
   };
 
   useEffect(() => {
@@ -106,12 +152,33 @@ const PersonalCommits: FC = () => {
                     {option.login}
                   </Box>
                 )}
-                sx={{ width: 300 }}
                 renderInput={(params): JSX.Element => (
                   <TextField {...params} label="Usuário" />
                 )}
                 inputValue={user.login}
                 onInputChange={changeUser}
+              />
+            </Grid>
+            <Grid item xs={4} sx={{ padding: 2 }}>
+              <TextField
+                label="Desde o dia"
+                variant="outlined"
+                type="date"
+                value={startDate}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                onChange={changeStartDate}
+              />
+            </Grid>
+            <Grid item xs={4} sx={{ padding: 2 }}>
+              <TextField
+                label="Até o dia"
+                variant="outlined"
+                type="date"
+                value={endDate}
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                onChange={changeEndDate}
               />
             </Grid>
           </Paper>
