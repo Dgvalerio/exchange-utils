@@ -1,4 +1,4 @@
-export interface IUser {
+export interface ICollaborator {
   login: string;
   id: number;
   node_id: string;
@@ -17,10 +17,14 @@ export interface IUser {
   received_events_url: string;
   type: string;
   site_admin: boolean;
+  permissions: {
+    admin: boolean;
+    maintain: boolean;
+    push: boolean;
+    triage: boolean;
+    pull: boolean;
+  };
+  role_name: string;
 }
 
-export interface ISimpleUser {
-  name: string;
-  email: string;
-  date: string;
-}
+export type ICollaboratorView = Pick<ICollaborator, 'login' | 'avatar_url'>;
