@@ -5,6 +5,7 @@ import {
   ICollaboratorView,
 } from '../types/Collaborator.interface';
 import { ICommit, ICommitView } from '../types/Commit.interface';
+import { IContributor, IContributorView } from '../types/Contributor.interface';
 import { formatDate, joinLists, orderByDate } from './index';
 
 const api = axios.create({
@@ -103,6 +104,40 @@ export const getCollaborators = async (): Promise<ICollaboratorView[]> => {
   const joined = joinLists(items);
 
   const withoutDuplicates: ICollaboratorView[] = [];
+
+  joined.forEach((item) => {
+    const exists = withoutDuplicates.find(({ login }) => login === item.login);
+
+    if (!exists) withoutDuplicates.push(item);
+  });
+
+  return withoutDuplicates.sort((p, c) => {
+    if (p.login > c.login) return 1;
+    if (p.login < c.login) return -1;
+
+    return 0;
+  });
+};
+
+export const getContributors = async (): Promise<IContributorView[]> => {
+  const responsePromise = repositories.map(
+    async (repo): Promise<IContributorView[]> => {
+      const { data } = await api.get<IContributor[]>(
+        `/repos/${owner}/${repo}/contributors`
+      );
+
+      return data.map((item) => ({
+        login: item.login,
+        avatar_url: item.avatar_url,
+      }));
+    }
+  );
+
+  const items: IContributorView[][] = await Promise.all(responsePromise);
+
+  const joined = joinLists(items);
+
+  const withoutDuplicates: IContributorView[] = [];
 
   joined.forEach((item) => {
     const exists = withoutDuplicates.find(({ login }) => login === item.login);

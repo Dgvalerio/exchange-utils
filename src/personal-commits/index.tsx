@@ -21,15 +21,15 @@ import {
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 
-import { ICollaboratorView } from '../types/Collaborator.interface';
 import { ICommitView } from '../types/Commit.interface';
-import { getCollaborators, GetCommits, getCommits } from '../utils/api';
+import { IContributorView } from '../types/Contributor.interface';
+import { getContributors, GetCommits, getCommits } from '../utils/api';
 
 const PersonalCommits: FC = () => {
   const [loading, setLoading] = useState(false);
   const [commits, setCommits] = useState<ICommitView[]>([]);
-  const [collaborators, setCollaborators] = useState<ICollaboratorView[]>([]);
-  const [user, setUser] = useState<ICollaboratorView>({
+  const [contributors, setContributors] = useState<IContributorView[]>([]);
+  const [user, setUser] = useState<IContributorView>({
     login: '',
     avatar_url: '',
   });
@@ -48,12 +48,12 @@ const PersonalCommits: FC = () => {
     })()
   );
 
-  const loadCollaborators = async (): Promise<void> => {
+  const loadContributors = async (): Promise<void> => {
     setLoading(true);
 
-    const response = await getCollaborators();
+    const response = await getContributors();
 
-    setCollaborators(response);
+    setContributors(response);
     setLoading(false);
   };
 
@@ -75,13 +75,11 @@ const PersonalCommits: FC = () => {
   };
 
   const changeUser = (event: React.SyntheticEvent, value: string): void => {
-    const anCollaborator = collaborators.find(({ login }) => value === login);
+    const anContributor = contributors.find(({ login }) => value === login);
 
-    if (!anCollaborator) return;
+    if (!anContributor) return;
 
-    console.log({ anCollaborator, value });
-
-    setUser(anCollaborator);
+    setUser(anContributor);
     void loadCommits({ author: value, since: startDate, until: endDate });
   };
 
@@ -110,7 +108,7 @@ const PersonalCommits: FC = () => {
   };
 
   useEffect(() => {
-    void loadCollaborators();
+    void loadContributors();
   }, []);
 
   useEffect(() => {
@@ -134,7 +132,7 @@ const PersonalCommits: FC = () => {
             <Grid item xs={4} sx={{ padding: 2 }}>
               <Autocomplete
                 disablePortal
-                options={collaborators}
+                options={contributors}
                 getOptionLabel={(option): string => option.login}
                 renderOption={(props, option): JSX.Element => (
                   <Box
