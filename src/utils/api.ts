@@ -51,8 +51,6 @@ export const getCommits = async ({
       if (since && since !== '') url += `&since=${since}`;
       if (until && until !== '') url += `&until=${until}`;
 
-      console.log({ getCommits: url });
-
       const { data } = await api.get<ICommit[]>(url);
 
       return data.map((commit) => ({

@@ -64,11 +64,7 @@ const PersonalCommits: FC = () => {
   }: GetCommits): Promise<void> => {
     setLoading(true);
 
-    const response = await getCommits({
-      author,
-      since: since && new Date(since).toISOString(),
-      until: until && new Date(until).toISOString(),
-    });
+    const response = await getCommits({ author, since, until });
 
     setCommits(response);
     setLoading(false);
@@ -110,10 +106,6 @@ const PersonalCommits: FC = () => {
   useEffect(() => {
     void loadContributors();
   }, []);
-
-  useEffect(() => {
-    console.log({ user });
-  }, [user]);
 
   return (
     <Container>
