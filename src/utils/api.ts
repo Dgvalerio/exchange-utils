@@ -1,12 +1,18 @@
 import axios from 'axios';
 
+import { IBranch, IBranchView } from '../types/Branch.interface';
 import {
   ICollaborator,
   ICollaboratorView,
 } from '../types/Collaborator.interface';
 import { ICommit, ICommitView } from '../types/Commit.interface';
 import { IContributor, IContributorView } from '../types/Contributor.interface';
-import { formatDate, joinLists, orderByDate } from './index';
+import {
+  formatDate,
+  joinLists,
+  joinListsWithoutDuplicates,
+  orderByDate,
+} from './index';
 
 const api = axios.create({
   baseURL: 'https://api.github.com/',
@@ -46,28 +52,38 @@ export const getCommits = async ({
 }: GetCommits): Promise<ICommitView[]> => {
   const commitsPromise = repositories.map(
     async (repo): Promise<ICommitView[]> => {
-      let url = `/repos/${owner}/${repo}/commits?author=${author}`;
+      const branches = await getBranches({ repository: repo });
 
-      if (since && since !== '') url += `&since=${since}`;
-      if (until && until !== '') url += `&until=${until}`;
+      const commitsByBranchPromise = branches.map(async (branch) => {
+        let url = `/repos/${owner}/${repo}/commits?sha=${branch}&author=${author}`;
 
-      const { data } = await api.get<ICommit[]>(url);
+        if (since && since !== '') url += `&since=${since}T00:00:00Z`;
+        if (until && until !== '') url += `&until=${until}T23:59:59Z`;
 
-      return data.map((commit) => ({
-        repo,
-        message: commit.commit.message,
-        author: {
-          login: commit.author.login,
-          avatar: commit.author.avatar_url,
-        },
-        committer: {
-          login: commit.committer.login,
-          avatar: commit.committer.avatar_url,
-        },
-        sha: commit.sha,
-        url: commit.html_url,
-        committed_at: commit.commit.author.date,
-      }));
+        const { data } = await api.get<ICommit[]>(url);
+
+        return data.map((commit) => ({
+          repo,
+          message: commit.commit.message,
+          author: {
+            login: commit.author.login,
+            avatar: commit.author.avatar_url,
+          },
+          committer: {
+            login: commit.committer.login,
+            avatar: commit.committer.avatar_url,
+          },
+          sha: commit.sha,
+          url: commit.html_url,
+          committed_at: commit.commit.author.date,
+        }));
+      });
+
+      const commitsByBranch: ICommitView[][] = await Promise.all(
+        commitsByBranchPromise
+      );
+
+      return joinListsWithoutDuplicates(commitsByBranch, 'sha');
     }
   );
 
@@ -146,6 +162,41 @@ export const getContributors = async (): Promise<IContributorView[]> => {
   return withoutDuplicates.sort((p, c) => {
     if (p.login > c.login) return 1;
     if (p.login < c.login) return -1;
+
+    return 0;
+  });
+};
+
+export const getBranches = async (options: {
+  repository: string;
+}): Promise<IBranchView[]> => {
+  let list: IBranchView[];
+
+  if (options.repository) {
+    const { data } = await api.get<IBranch[]>(
+      `/repos/${owner}/${options.repository}/branches`
+    );
+
+    list = data.map(({ name }) => name);
+  } else {
+    const responsePromise = repositories.map(
+      async (repo): Promise<IBranchView[]> => {
+        const { data } = await api.get<IBranch[]>(
+          `/repos/${owner}/${repo}/branches`
+        );
+
+        return data.map(({ name }) => name);
+      }
+    );
+
+    const items: IBranchView[][] = await Promise.all(responsePromise);
+
+    list = joinLists(items);
+  }
+
+  return list.sort((p, c) => {
+    if (p > c) return 1;
+    if (p < c) return -1;
 
     return 0;
   });

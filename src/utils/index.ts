@@ -1,7 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const joinLists = <Item>(list: Item[][]): Item[] =>
-  list.reduce((previousValue, current) => previousValue.concat(current));
+  list.reduce((previous, current) => previous.concat(current));
+
+export const joinListsWithoutDuplicates = <Item>(
+  list: Item[][],
+  fieldName: keyof Item
+): Item[] =>
+  list.reduce((previous, current) => {
+    const nonDuplicates = current.filter(
+      (curr) =>
+        !previous.find(
+          (prev) => (curr as any)[fieldName] === (prev as any)[fieldName]
+        )
+    );
+
+    return previous.concat(nonDuplicates);
+  });
 
 export const orderByDate = <Item>(
   list: Item[],
